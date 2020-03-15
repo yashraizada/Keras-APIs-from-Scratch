@@ -1,5 +1,3 @@
-import numpy as np
-
 class LinearRegression():
     def __init__(self):
         print('Constructor of Linear Regression')
@@ -82,3 +80,14 @@ class LinearRegression():
         
         plt.plot(indexes, self.cost)
         plt.show()
+    
+    def performance(self, y_hat, y, type_score):
+        
+        # convert data into an operable format
+        y_hat = np.array(y_hat)
+        y = np.array(y)
+        
+        # define length of test set
+        num_records = y_hat.shape[0]
+        if type_score == 'mae':
+            return np.sum(np.abs(y_hat - y)) / num_records
