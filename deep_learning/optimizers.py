@@ -1,3 +1,5 @@
+# Reference: https://keras.io/optimizers
+
 import numpy as np
 
 # Stochastic Gradient Descent with/without Momentum
