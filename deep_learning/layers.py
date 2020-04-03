@@ -59,17 +59,19 @@ class Dense(Layers):
 			prev_gradient = np.multiply(prev_gradient, self.activation.gradient(self.pre_activation))
 			dk = np.dot(prev_gradient.transpose(), self.layer_input)
 			db = np.sum(prev_gradient, axis = 0, keepdims = True)
+			db = db.transpose()
 		else:
 			prev_gradient = np.multiply(prev_gradient, np.ones(self.pre_activation.shape))
 			dk = np.dot(prev_gradient.transpose(), self.layer_input)
-			db = np.sum(prev_gradient.transpose(), axis = 0, keepdims = True)
+			db = np.sum(prev_gradient, axis = 0, keepdims = True)
+			db = db.transpose()
 
 		# creating 2 instances of optimizer - weights, bias
 		opt_weights = copy(optimizer)
 		opt_bias = copy(optimizer)
 
-		self.kernel = opt_weights.update(self.kernel, dk, learning_rate=learning_rate)
-		self.bias = opt_bias.update(self.bias, db, learning_rate=learning_rate)
+		self.kernel = opt_weights.update(self.kernel, dk)
+		self.bias = opt_bias.update(self.bias, db)
 
 		return np.dot(prev_gradient, cached_weights)
 
