@@ -12,7 +12,7 @@ class MAE(Metric):
 		return np.mean(np.abs(y_hat - y))
 
 	def __str__(self):
-		return 'Mean Absolute Error'
+		return 'MAE'
 
 class MSE(Metric):
 	def __init__(self, y_hat, y):
@@ -23,7 +23,7 @@ class MSE(Metric):
 		return np.mean(np.square(y_hat - y))
 
 	def __str__(self):
-		return 'Mean Squared Error'
+		return 'MSE'
 
 class RMSE(Metric):
 	def __init__(self, y_hat, y):
@@ -34,4 +34,4 @@ class RMSE(Metric):
 		return np.sqrt(np.mean(np.square(y_hat - y)))
 
 	def __str__(self):
-		return 'Root Mean Squared Error'
+		return 'RMSE'
