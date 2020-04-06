@@ -1,4 +1,5 @@
 import numpy as np
+import progressbar
 
 from layers import *
 from loss_functions import *
@@ -75,7 +76,8 @@ class Sequential(Model):
 
 	def compile(self, loss, optimizer, metrics=None):
 		for layer in self.layers:
-			layer.build()
+			if hasattr(layer, 'build'):
+				layer.build()
 
 		self.loss = loss
 		self.optimizer = optimizer
