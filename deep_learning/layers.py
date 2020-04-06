@@ -5,9 +5,6 @@ from activations import *
 from optimizers import *
 
 class Layers():
-	def set_input_weights(self, shape):
-		self.input_shape = shape
-
 	def add_weights(self, shape, initializer):
 		return initializer(shape)
 
@@ -80,3 +77,41 @@ class Dense(Layers):
 
 	def compute_output_shape(self):
 		return self.units
+
+
+# Reference: http://www.jmlr.org/papers/volume15/srivastava14a/srivastava14a.pdf; https://keras.io/layers/core
+class Dropout(Layers):
+	def __init__(self, rate, noise_shape=None):
+		self.rate = np.clip(rate, 0., 1.)
+		self.noise_shape = noise_shape
+		self.layer_input_shape = None
+		self.bernoulli_mask = None
+
+		self.input_shape = None
+
+	def get_noise_shape(self):
+		if self.noise_shape == None:
+			return self.layer_input_shape
+
+		return self.noise_shape
+
+	def forward_prop_layer(self, layer_input):
+		if 0. < self.rate < 1.:
+			self.layer_input_shape = layer_input.shape
+			self.bernoulli_mask = np.random.choice([0., 1.], self.get_noise_shape(), replace = True, p=[self.rate, 1-self.rate]) / (1-self.rate)
+			
+			return np.multiply(layer_input, self.bernoulli_mask)
+
+		return layer_input
+
+	def backward_prop_layer(self, prev_gradient, optimizer, learning_rate):
+		if 0. < self.rate < 1.:
+			return np.multiply(prev_gradient, self.bernoulli_mask) / (1-self.rate)
+
+		return prev_gradient
+
+	def set_input_shape(self, shape):
+		self.input_shape = shape
+
+	def compute_output_shape(self):
+		return self.input_shape
