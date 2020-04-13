@@ -35,7 +35,7 @@ class Dense(Layers):
 		self.kernel = self.add_weights(initializer=self.kernel_initializer, shape=(self.units, self.input_shape))
 		self.bias = self.add_weights(initializer=self.bias_initializer, shape=(self.units, 1))
 
-	def forward_prop_layer(self, layer_input):
+	def forward_prop_layer(self, layer_input, training):
 		self.layer_input = layer_input
 		output = np.dot(self.layer_input, self.kernel.transpose())
 
@@ -95,7 +95,7 @@ class Dropout(Layers):
 
 		return self.noise_shape
 
-	def forward_prop_layer(self, layer_input):
+	def forward_prop_layer(self, layer_input, training):
 		if 0. < self.rate < 1.:
 			self.layer_input_shape = layer_input.shape
 			self.bernoulli_mask = np.random.choice([0., 1.], self.get_noise_shape(), replace = True, p=[self.rate, 1-self.rate]) / (1-self.rate)
@@ -109,6 +109,98 @@ class Dropout(Layers):
 			return np.multiply(prev_gradient, self.bernoulli_mask) / (1-self.rate)
 
 		return prev_gradient
+
+	def set_input_shape(self, shape):
+		self.input_shape = shape
+
+	def compute_output_shape(self):
+		return self.input_shape
+
+# Reference: https://arxiv.org/pdf/1502.03167.pdf; https://kevinzakka.github.io/2016/09/14/batch_normalization; https://keras.io/layers/normalization
+class BatchNormalization(Layers):
+	def __init__(self, axis=-1, momentum=0.99, epsilon=0.001, center=True, scale=True, beta_initializer=Zeros(), gamma_initializer=Ones(), moving_mean_initializer=Zeros(), moving_variance_initializer=Ones()):
+		self.axis = axis
+		self.momentum = momentum
+		self.epsilon = epsilon
+		self.center = center
+		self.scale = scale
+		self.beta_initializer = beta_initializer
+		self.gamma_initializer = gamma_initializer
+		self.moving_mean_initializer = moving_mean_initializer
+		self.moving_variance_initializer = moving_variance_initializer
+
+		self.moving_mean = []
+		self.moving_variance = []
+
+		self.input_shape = None
+		self.gamma = None
+		self.beta = None
+
+		# cache values
+		self.layer_input = None
+		self.x_hat = None
+		self.inv_std_dev = None
+	
+	def add_weights(self, shape, initializer):
+		return super(BatchNormalization, self).add_weights(shape, initializer)
+
+	def build(self):
+		self.gamma = self.add_weights(initializer=self.gamma_initializer, shape=(1, self.input_shape))
+		self.beta = self.add_weights(initializer=self.beta_initializer, shape=(1, self.input_shape))
+
+		self.moving_mean = self.add_weights(initializer=self.moving_mean_initializer, shape=(1, self.input_shape))
+		self.moving_variance = self.add_weights(initializer=self.moving_variance_initializer, shape=(1, self.input_shape))
+
+	def forward_prop_layer(self, layer_input, training):
+		# update shape
+		self.layer_input = layer_input
+
+		if training==True:
+			# calculate values
+			mean = np.mean(layer_input, axis=0)
+			var = np.var(layer_input, axis=0)
+			inv_std_dev = 1/np.sqrt(var + self.epsilon)
+
+			# update moving_mean and moving_variance
+			self.moving_mean = self.momentum * self.moving_mean + (1-self.momentum) * mean
+			self.moving_variance = self.momentum * self.moving_variance + (1-self.momentum) * var
+
+		else:
+			mean = self.moving_mean
+			var = self.moving_variance
+			inv_std_dev = 1/np.sqrt(var + self.epsilon)
+
+		x_hat = (layer_input - mean) * inv_std_dev
+
+		if self.scale:
+			x_hat = np.multiply(self.gamma, x_hat)
+		if self.center:
+			x_hat = x_hat + self.beta
+
+		# cache
+		self.x_hat = x_hat
+		self.inv_std_dev = inv_std_dev
+
+		return x_hat
+
+	def backward_prop_layer(self, prev_gradient, optimizer, learning_rate):
+		# dl_da wihtout any activation
+		prev_gradient = np.multiply(prev_gradient, np.ones(self.layer_input.shape))
+
+		dx_hat = np.sum(np.multiply(prev_gradient, self.gamma), axis=0, keepdims=True)
+		dgamma = np.sum(np.multiply(prev_gradient, self.x_hat), axis=0, keepdims=True)
+		dbeta = np.sum(prev_gradient, axis=0, keepdims=True)
+
+		batch_size = self.layer_input.shape[0]
+
+		dx = (1./batch_size) * self.inv_std_dev * (batch_size*dx_hat - np.sum(dx_hat, axis=0) - np.multiply(self.x_hat, np.sum(np.multiply(dx_hat, self.x_hat), axis=0)))
+
+		# creating 2 instances of optimizer - gamma, beta
+		opt_gamma = copy(optimizer)
+		opt_beta = copy(optimizer)
+
+		self.gamma = opt_gamma.update(self.gamma, dgamma)
+		self.beta = opt_beta.update(self.beta, dbeta)
 
 	def set_input_shape(self, shape):
 		self.input_shape = shape
