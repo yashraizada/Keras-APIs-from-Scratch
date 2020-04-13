@@ -9,19 +9,19 @@ class Layers():
 		return initializer(shape)
 
 class Dense(Layers):
-	def __init__(self, units, input_shape=None, activation=None, use_bias = True, kernel_initializer=GlorotUniform(), bias_initializer=Zeros()):
+	def __init__(self, units, input_shape=None, activation=None, use_bias = True, kernel_initializer=GlorotUniform(), bias_initializer=Zeros(), kernel_regularizer=None):
 		self.units = units
 		self.input_shape = input_shape
 		self.activation = activation
 		self.use_bias = use_bias
 		self.kernel_initializer = kernel_initializer
 		self.bias_initializer = bias_initializer
-		# self.kernel_regularizer = kernel_regularizer
-		# self.bias_regularizer = bias_regularizer
+		self.kernel_regularizer = kernel_regularizer
 
 		self.weighted_sum = None
 		self.kernel = None
 		self.bias = None
+		self.batch_size = None
 
 		# h_L-1
 		self.layer_input = None
@@ -37,6 +37,8 @@ class Dense(Layers):
 
 	def forward_prop_layer(self, layer_input, training):
 		self.layer_input = layer_input
+		self.batch_size = layer_input.shape[0]
+
 		output = np.dot(self.layer_input, self.kernel.transpose())
 
 		if self.use_bias:
@@ -67,8 +69,11 @@ class Dense(Layers):
 		opt_weights = copy(optimizer)
 		opt_bias = copy(optimizer)
 
-		self.kernel = opt_weights.update(self.kernel, dk)
-		self.bias = opt_bias.update(self.bias, db)
+		self.kernel = opt_weights.update(self.kernel, dk, learning_rate)
+		self.bias = opt_bias.update(self.bias, db, learning_rate)
+
+		if self.kernel_regularizer:
+			self.kernel -= (self.kernel_regularizer.gradient(self.kernel)/self.batch_size)  
 
 		return np.dot(prev_gradient, cached_weights)
 
@@ -135,6 +140,7 @@ class BatchNormalization(Layers):
 		self.input_shape = None
 		self.gamma = None
 		self.beta = None
+		self.batch_size = None
 
 		# cache values
 		self.layer_input = None
@@ -154,6 +160,7 @@ class BatchNormalization(Layers):
 	def forward_prop_layer(self, layer_input, training):
 		# update shape
 		self.layer_input = layer_input
+		self.batch_size = layer_input.shape[0]
 
 		if training==True:
 			# calculate values
@@ -191,16 +198,14 @@ class BatchNormalization(Layers):
 		dgamma = np.sum(np.multiply(prev_gradient, self.x_hat), axis=0, keepdims=True)
 		dbeta = np.sum(prev_gradient, axis=0, keepdims=True)
 
-		batch_size = self.layer_input.shape[0]
-
-		dx = (1./batch_size) * self.inv_std_dev * (batch_size*dx_hat - np.sum(dx_hat, axis=0) - np.multiply(self.x_hat, np.sum(np.multiply(dx_hat, self.x_hat), axis=0)))
+		dx = (1./self.batch_size) * self.inv_std_dev * (self.batch_size*dx_hat - np.sum(dx_hat, axis=0) - np.multiply(self.x_hat, np.sum(np.multiply(dx_hat, self.x_hat), axis=0)))
 
 		# creating 2 instances of optimizer - gamma, beta
 		opt_gamma = copy(optimizer)
 		opt_beta = copy(optimizer)
 
-		self.gamma = opt_gamma.update(self.gamma, dgamma)
-		self.beta = opt_beta.update(self.beta, dbeta)
+		self.gamma = opt_gamma.update(self.gamma, dgamma, learning_rate)
+		self.beta = opt_beta.update(self.beta, dbeta, learning_rate)
 
 	def set_input_shape(self, shape):
 		self.input_shape = shape
