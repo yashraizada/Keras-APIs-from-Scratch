@@ -30,9 +30,9 @@ class Sequential(Model):
 
 		self.layers.append(layer)
 
-	def forward_propagation(self, X):
+	def forward_propagation(self, X, training):
 		for layer in self.layers:
-			X = layer.forward_prop_layer(X)
+			X = layer.forward_prop_layer(X, training)
 		return X
 
 	def backward_propagation(self, prev_gradient):
@@ -41,7 +41,7 @@ class Sequential(Model):
 
 	def train_on_batch(self, X_batch, y_batch):
 		# forward pass
-		y_hat = self.forward_propagation(X_batch)
+		y_hat = self.forward_propagation(X_batch, training=True)
 
 		# calculate cost
 		cost = self.loss(y_batch, y_hat)
@@ -57,7 +57,7 @@ class Sequential(Model):
 
 	def evaluate_on_batch(self, X_batch, y_batch, batch_history, istrain):
 		# forward pass
-		y_hat = self.forward_propagation(X_batch)
+		y_hat = self.forward_propagation(X_batch, training=False)
 
 		if istrain:
 			prefix = 'train_'
@@ -90,7 +90,7 @@ class Sequential(Model):
 				self.history['train_' + str(metric)] = []
 				self.history['test_' + str(metric)] = []
 
-	def fit(self, X, y, batch_size=None, epochs=1, verbose=1, learning_rate=0.01, validation_split=0., validation_data=None, shuffle=True):
+	def fit(self, X, y, batch_size=None, epochs=1, verbose=1, learning_rate=0.1, validation_split=0., validation_data=None, shuffle=True):
 		
 		self.learning_rate = learning_rate
 
