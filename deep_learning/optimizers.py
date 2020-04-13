@@ -17,7 +17,7 @@ class SGD(Optimizer):
         self.momentum = momentum
         self.gamma = None
 
-    def update(self, weight, gradient, ):
+    def update(self, weight, gradient):
         if self.gamma is None:
             self.gamma = np.zeros(np.shape(weight))
 
@@ -65,7 +65,7 @@ class AdaGrad(Optimizer):
         return weight - self.learning_rate * gradient / np.sqrt(self.gradient_mag + self.epsilon)
 
 class RMSProp(Optimizer):
-    def __init__(self, learning_rate = 0.001, beta = 0.95):
+    def __init__(self, learning_rate = 0.001, beta = 0.95, clipvalue=None, clipnorm=None):
         super(RMSProp, self).__init__(clipvalue=clipvalue, clipnorm=clipnorm)
         self.learning_rate = learning_rate
         self.gradient_mag = None
@@ -83,8 +83,8 @@ class RMSProp(Optimizer):
             return self.value_clipper(weight - weight - self.learning_rate * gradient / np.sqrt(self.gradient_mag + self.epsilon))
         return weight - self.learning_rate * gradient / np.sqrt(self.gradient_mag + self.epsilon)
 
-class Adam():
-    def __init__(self, learning_rate = 0.001, beta1 = 0.9, beta2 = 0.999):
+class Adam(Optimizer):
+    def __init__(self, learning_rate = 0.001, beta1 = 0.9, beta2 = 0.999, clipvalue=None, clipnorm=None):
         super(Adam, self).__init__(clipvalue=clipvalue, clipnorm=clipnorm)
         self.learning_rate = learning_rate
         
@@ -101,7 +101,7 @@ class Adam():
             self.v = np.zeros(np.shape(gradient))
         
         self.m = self.beta1 * self.m + (1 - self.beta1) * gradient
-        self.v = self.beta2 * self.v + (1 - self.beta2) * np.sqaure(gradient)
+        self.v = self.beta2 * self.v + (1 - self.beta2) * np.square(gradient)
         
         m_hat = self.m / (1 - self.beta1)
         v_hat = self.v / (1 - self.beta2)
