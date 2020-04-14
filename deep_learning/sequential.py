@@ -37,7 +37,7 @@ class Sequential(Model):
 
 	def backward_propagation(self, prev_gradient):
 		for layer in reversed(self.layers):
-			layer.backward_prop_layer(prev_gradient, self.optimizer, self.learning_rate)
+			prev_gradient = layer.backward_prop_layer(prev_gradient, self.optimizer, self.learning_rate)
 
 	def train_on_batch(self, X_batch, y_batch):
 		# forward pass
