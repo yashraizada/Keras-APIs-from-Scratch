@@ -24,8 +24,6 @@ class Regularizer():
 		if self.l2:
 			return self.l2 * kernel
 
-
-
 def l1(l=0.01):
 	return Regularizer(l1=l)
 
