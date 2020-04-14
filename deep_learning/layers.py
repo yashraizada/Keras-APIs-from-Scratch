@@ -73,7 +73,7 @@ class Dense(Layers):
 		self.bias = opt_bias.update(self.bias, db, learning_rate)
 
 		if self.kernel_regularizer:
-			self.kernel -= (self.kernel_regularizer.gradient(self.kernel)/self.batch_size)  
+			self.kernel -= (self.kernel_regularizer.gradient(self.kernel)/self.batch_size)
 
 		return np.dot(prev_gradient, cached_weights)
 
@@ -121,7 +121,7 @@ class Dropout(Layers):
 	def compute_output_shape(self):
 		return self.input_shape
 
-# Reference: https://arxiv.org/pdf/1502.03167.pdf; https://kevinzakka.github.io/2016/09/14/batch_normalization; https://keras.io/layers/normalization
+# Reference: https://arxiv.org/pdf/1502.03167.pdf; https://keras.io/layers/normalization; https://github.com/eriklindernoren/ML-From-Scratch/blob/master/mlfromscratch/deep_learning/layers.py 
 class BatchNormalization(Layers):
 	def __init__(self, axis=-1, momentum=0.99, epsilon=0.001, center=True, scale=True, beta_initializer=Zeros(), gamma_initializer=Ones(), moving_mean_initializer=Zeros(), moving_variance_initializer=Ones()):
 		self.axis = axis
@@ -164,20 +164,20 @@ class BatchNormalization(Layers):
 
 		if training==True:
 			# calculate values
-			mean = np.mean(layer_input, axis=0)
-			var = np.var(layer_input, axis=0)
-			inv_std_dev = 1/np.sqrt(var + self.epsilon)
+			self.mean = np.mean(layer_input, axis=0)
+			self.var = np.var(layer_input, axis=0)
+			self.inv_std_dev = 1/np.sqrt(self.var + self.epsilon)
 
 			# update moving_mean and moving_variance
-			self.moving_mean = self.momentum * self.moving_mean + (1-self.momentum) * mean
-			self.moving_variance = self.momentum * self.moving_variance + (1-self.momentum) * var
+			self.moving_mean = self.momentum * self.moving_mean + (1-self.momentum) * self.mean
+			self.moving_variance = self.momentum * self.moving_variance + (1-self.momentum) * self.var
 
 		else:
-			mean = self.moving_mean
-			var = self.moving_variance
-			inv_std_dev = 1/np.sqrt(var + self.epsilon)
+			self.mean = self.moving_mean
+			self.var = self.moving_variance
+			self.inv_std_dev = 1/np.sqrt(self.var + self.epsilon)
 
-		x_hat = (layer_input - mean) * inv_std_dev
+		x_hat = (layer_input - self.mean) * self.inv_std_dev
 
 		if self.scale:
 			x_hat = np.multiply(self.gamma, x_hat)
@@ -186,19 +186,17 @@ class BatchNormalization(Layers):
 
 		# cache
 		self.x_hat = x_hat
-		self.inv_std_dev = inv_std_dev
+		self.inv_std_dev = self.inv_std_dev
 
 		return x_hat
 
 	def backward_prop_layer(self, prev_gradient, optimizer, learning_rate):
+		cached_gamma = self.gamma
 		# dl_da wihtout any activation
 		prev_gradient = np.multiply(prev_gradient, np.ones(self.layer_input.shape))
 
-		dx_hat = np.sum(np.multiply(prev_gradient, self.gamma), axis=0, keepdims=True)
 		dgamma = np.sum(np.multiply(prev_gradient, self.x_hat), axis=0, keepdims=True)
 		dbeta = np.sum(prev_gradient, axis=0, keepdims=True)
-
-		dx = (1./self.batch_size) * self.inv_std_dev * (self.batch_size*dx_hat - np.sum(dx_hat, axis=0) - np.multiply(self.x_hat, np.sum(np.multiply(dx_hat, self.x_hat), axis=0)))
 
 		# creating 2 instances of optimizer - gamma, beta
 		opt_gamma = copy(optimizer)
@@ -206,6 +204,8 @@ class BatchNormalization(Layers):
 
 		self.gamma = opt_gamma.update(self.gamma, dgamma, learning_rate)
 		self.beta = opt_beta.update(self.beta, dbeta, learning_rate)
+
+		return (1/self.batch_size) * cached_gamma * self.inv_std_dev * (self.batch_size * prev_gradient - np.sum(prev_gradient, axis=0) - (self.layer_input-self.mean) * (self.inv_std_dev**2) * np.sum(prev_gradient * (self.layer_input-self.mean), axis=0))
 
 	def set_input_shape(self, shape):
 		self.input_shape = shape
