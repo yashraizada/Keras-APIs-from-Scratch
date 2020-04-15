@@ -121,7 +121,7 @@ class Dropout(Layers):
 	def compute_output_shape(self):
 		return self.input_shape
 
-# Reference: https://arxiv.org/pdf/1502.03167.pdf; https://keras.io/layers/normalization; https://github.com/eriklindernoren/ML-From-Scratch/blob/master/mlfromscratch/deep_learning/layers.py 
+# Reference: https://arxiv.org/pdf/1502.03167.pdf; https://keras.io/layers/normalization
 class BatchNormalization(Layers):
 	def __init__(self, axis=-1, momentum=0.99, epsilon=0.001, center=True, scale=True, beta_initializer=Zeros(), gamma_initializer=Ones(), moving_mean_initializer=Zeros(), moving_variance_initializer=Ones()):
 		self.axis = axis
