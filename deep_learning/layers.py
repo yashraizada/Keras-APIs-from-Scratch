@@ -101,13 +101,15 @@ class Dropout(Layers):
 		return self.noise_shape
 
 	def forward_prop_layer(self, layer_input, training):
-		if 0. < self.rate < 1.:
-			self.layer_input_shape = layer_input.shape
-			self.bernoulli_mask = np.random.choice([0., 1.], self.get_noise_shape(), replace = True, p=[self.rate, 1-self.rate]) / (1-self.rate)
-			
-			return np.multiply(layer_input, self.bernoulli_mask)
-
-		return layer_input
+		if training:
+			if 0. < self.rate < 1.:
+				self.layer_input_shape = layer_input.shape
+				self.bernoulli_mask = np.random.choice([0., 1.], self.get_noise_shape(), replace = True, p=[self.rate, 1-self.rate]) / (1-self.rate)
+				
+				return np.multiply(layer_input, self.bernoulli_mask)
+			return layer_input
+		else:
+			return layer_input
 
 	def backward_prop_layer(self, prev_gradient, optimizer, learning_rate):
 		if 0. < self.rate < 1.:
