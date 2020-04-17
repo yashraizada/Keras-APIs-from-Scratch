@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 
 class plot_curves():
 	def __call__(self, history, type_):
-		if type_ == 'cost':
+		if type_ == 'loss':
 			# Plot cost vs epoch
 			plt.plot(history['cost'])
 			plt.title('Cost vs Epoch')
