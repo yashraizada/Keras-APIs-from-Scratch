@@ -135,5 +135,5 @@ class Sequential(Model):
 			# print results
 			print(batch_history)
 
-	def plot_history(self, type_='cost'):
+	def plot_history(self, type_='loss'):
 		plot_curves()(self.history, type_)
