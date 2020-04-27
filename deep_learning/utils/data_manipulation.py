@@ -1,4 +1,5 @@
 import numpy as np
+from progressbar import progressbar
 
 def batch_generator(X, y=None, batch_size=64):
 	num_records = X.shape[0]
@@ -9,10 +10,18 @@ def batch_generator(X, y=None, batch_size=64):
 		else:
 			yield X[start: end]
 
-def straighten(X, flow='vertical'):
+# Return 1-D array from input N-D array (N <= 3)
+def straighten(X, flow='horizontal'):
 	if flow=='vertical':
-		return X.T.flatten()
+		return X.T.transpose(-1, 2, 0, 1).reshape(-1, np.prod(X.shape[1:]))
 	elif flow=='horizontal':
-		return X.flatten()
-	else:
-		raise ValueError('keyword: ' + flow + ' not recognized')
+		return X.reshape(-1, np.prod(X.shape[1:]))
+
+# Return N-D array (N <= 3) from 1-D input
+def unstraighten(X, output_dim, flow='horizontal'):
+	Ch, Row, Col = output_dim[0], output_dim[1], output_dim[2]
+	
+	if flow=='vertical':
+		return X.reshape(-1, Ch, Row, Col).T.transpose(-1, 2, 0, 1)
+	elif flow=='horizontal':
+		return X.reshape(-1, Ch, Row, Col)
