@@ -1,5 +1,4 @@
 import numpy as np
-import progressbar
 
 from layers import *
 from loss_functions import *
