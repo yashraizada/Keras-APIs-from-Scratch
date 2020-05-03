@@ -1,5 +1,4 @@
 import numpy as np
-from progressbar import progressbar
 
 def batch_generator(X, y=None, batch_size=64):
 	num_records = X.shape[0]
