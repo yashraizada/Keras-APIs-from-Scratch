@@ -110,7 +110,10 @@ class Sequential(Model):
 			batch_size = X.shape[0]
 
 		# conversion to operable dimensions
-		y = y.reshape(y.shape[0], 1)
+		if len(y.shape) == 1:
+			y = y.reshape(y.shape[0], 1)
+		else:
+			y = y.reshape(y.shape[0], y.shape[1])
 
 		for epoch in range(epochs):
 			print(f"Epoch: {epoch+1}")
