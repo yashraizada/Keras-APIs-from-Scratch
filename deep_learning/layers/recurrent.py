@@ -52,34 +52,34 @@ class SimpleRNN(Layers):
 		self.b = self.add_weights(initializer=self.bias_initializer, shape=(self.units, 1))
 		self.c = self.add_weights(initializer=self.bias_initializer, shape=(self.features, 1))
 
-		self.state = self.add_weights(initializer=Zeros(), shape=(self.time_steps, self.units))
-		self.state[0, :] = self.add_weights(initializer=recurrent_initializer, shape=(1, self.units))
-
-		self.output = self.add_weights(initializer=Zeros(), shape=(self.time_steps, self.features))
-
 	def forward_prop_layer(self, layer_input, training):
 		self.layer_input = layer_input
 
-		# Define batch_size
+		# define batch_sizeand initialize state and output matrices
 		self.batch_size = layer_input.shape[0]
+		self.state = self.add_weights(initializer=Zeros(), shape=(self.batch_size, self.time_steps, self.units))
+		self.state[:, 0, :] = self.add_weights(initializer=recurrent_initializer, shape=(self.batch_size, self.units))
 
+		self.output = self.add_weights(initializer=Zeros(), shape=(self.batch_size, self.time_steps, self.features))
+
+		# start time step iteration
 		for time_step in range(1, time_steps+1):
-			state_update = np.dot(self.U, self.layer_input[:, time_step, :].transpose()) + np.dot(self.W, self.state[time_step-1, :].transpose())
+			state_update = np.dot(self.layer_input[:, time_step, :], self.U.transpose()) + np.dot(self.state[:, time_step-1, :], self.W.transpose())
 
 			if self.use_bias:
 				state_update += self.b
 			if self.activation:
 				state_update = self.activation(state_update)
 
-			output_update = np.dot(self.V, state_update)
+			output_update = np.dot(state_update, self.V.transpose())
 
 			if self.use_bias:
 				output_update += self.c
 			if self.activation:
 				output_update = self.activation(output_update)
 
-			self.state[time_step, :] = state_update
-			self.output[time_step, :] = output_update
+			self.state[:, time_step, :] = state_update
+			self.output[:, time_step, :] = output_update
 		
 		if self.return_sequences:
 			return self.state
