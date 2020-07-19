@@ -49,8 +49,8 @@ class SimpleRNN(Layers):
 		self.U = self.add_weights(initializer=self.kernel_initializer, shape=(self.units, self.features))
 		self.V = self.add_weights(initializer=self.kernel_initializer, shape=(self.features, self.units))
 		self.W = self.add_weights(initializer=self.kernel_initializer, shape=(self.units, self.units))
-		self.b = self.add_weights(initializer=self.bias_initializer, shape=(self.units, 1))
-		self.c = self.add_weights(initializer=self.bias_initializer, shape=(self.features, 1))
+		self.b = self.add_weights(initializer=self.bias_initializer, shape=(1, self.units))
+		self.c = self.add_weights(initializer=self.bias_initializer, shape=(1, self.features))
 
 	def forward_prop_layer(self, layer_input, training):
 		self.layer_input = layer_input
