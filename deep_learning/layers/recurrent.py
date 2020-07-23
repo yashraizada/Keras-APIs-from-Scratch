@@ -55,14 +55,14 @@ class SimpleRNN(Layers):
 	def forward_prop_layer(self, layer_input, training):
 		self.layer_input = layer_input
 
-		# define batch_sizeand initialize state and output matrices
+		# define batch_size and initialize state and output matrices
 		self.batch_size = layer_input.shape[0]
 		self.state = self.add_weights(initializer=Zeros(), shape=(self.batch_size, self.time_steps, self.units))
 		self.state[:, 0, :] = self.add_weights(initializer=recurrent_initializer, shape=(self.batch_size, self.units))
 
 		self.output = self.add_weights(initializer=Zeros(), shape=(self.batch_size, self.time_steps, self.features))
 
-		# start time step iteration
+		# start iteration through time steps
 		for time_step in range(1, time_steps+1):
 			state_update = np.dot(self.layer_input[:, time_step, :], self.U.transpose()) + np.dot(self.state[:, time_step-1, :], self.W.transpose())
 
