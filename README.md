@@ -1,2 +1,2 @@
-# built_from_scratch
-Machine Learning algorithms implemented from the scratch
+# Keras APIs from Scratch
+Major Machine Learning and Deep Learning algorithms implemented from the scratch
